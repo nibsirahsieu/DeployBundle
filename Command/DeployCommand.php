@@ -9,7 +9,7 @@
 
 namespace Hpatoio\DeployBundle\Command;
 
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -17,8 +17,19 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Process\Process;
 
-class DeployCommand extends ContainerAwareCommand
+class DeployCommand extends Command
 {
+    private $configRootPath;
+    private $deployConfig;
+
+    public function __construct($configRootPath, $deployConfig)
+    {
+        $this->configRootPath = $configRootPath;
+        $this->deployConfig = $deployConfig;
+
+        parent::__construct();
+    }
+
     /**
      * @see Command
      */
@@ -40,9 +51,9 @@ class DeployCommand extends ContainerAwareCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
 
-        $config_root_path = $this->getContainer()->get('kernel')->getRootDir()."/config/";
+        $config_root_path = $this->configRootPath;
         $output->getFormatter()->setStyle('notice', new OutputFormatterStyle('red', 'yellow'));
-        $available_env = $this->getContainer()->getParameter('deploy.config');       
+        $available_env = $this->deployConfig;  
         
         $env = $input->getArgument('env');
         
