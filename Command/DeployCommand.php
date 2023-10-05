@@ -151,5 +151,6 @@ class DeployCommand extends Command
 
         $output->writeln("");
 
+        return 0;
     }
 }
