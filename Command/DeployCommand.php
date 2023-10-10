@@ -48,7 +48,7 @@ class DeployCommand extends Command
     /**
      * @see Command
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
 
         $config_root_path = $this->configRootPath;
@@ -101,7 +101,7 @@ class DeployCommand extends Command
             $input->getArgument('env'),
             $command));
 
-        $process = new Process($command);
+        $process = new Process([$command]);
         $process->setTimeout(($timeout == 0) ? null : $timeout);
 
         $output->writeln("\nSTART deploy\n--------------------------------------------");
@@ -133,7 +133,7 @@ class DeployCommand extends Command
 
                 $command = "$ssh $user$host 'cd \"$dir\";".$post_deploy_commands."'";
 
-                $process = new Process($command);
+                $process = new Process([$command]);
                 $process->setTimeout(($timeout == 0) ? null : $timeout);
                 $process->run(function ($type, $buffer) use ($output) {
                         if ('err' === $type) {
