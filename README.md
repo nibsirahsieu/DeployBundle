@@ -6,14 +6,16 @@ DeployBundle
 [![SensioLabsInsight](https://insight.sensiolabs.com/projects/b4556cd7-652f-4a58-9126-eb2c1abd6c89/mini.png)](https://insight.sensiolabs.com/projects/b4556cd7-652f-4a58-9126-eb2c1abd6c89)
 [![Project Status](http://stillmaintained.com/hpatoio/DeployBundle.png)](http://stillmaintained.com/hpatoio/DeployBundle)
 
+This project is fork of https://github.com/hpatoio/DeployBundle.
+
 ## Installation
 Run the command:
 
 ```bash
-$ composer require hpatoio/deploy-bundle ~1.5
+$ composer require nibsirahsieu/deploy-bundle ~1.6
 ```
 
-**N.B.** This project follow [semantic versioning](http://semver.org/). Latest stable branch is `1.5`.
+**N.B.** This project follow [semantic versioning](http://semver.org/). Latest stable branch is `1.6`.
 
 
 ### Enable the bundle in your project

@@ -1,21 +1,24 @@
 {
-    "name": "hpatoio/deploy-bundle",
+    "name": "nibsirahsieu/deploy-bundle",
     "type": "symfony-bundle",
     "description": "Easy deploy via rsync. Porting of Symfony 1 project:deploy command.",
     "keywords": ["deploy","command"],
-    "homepage": "http://github.com/hpatoio/DeployBundle",
+    "homepage": "http://github.com/nibsirahsieu/DeployBundle",
     "license": "CC-BY-SA-3.0",
     "authors": [
         {
-            "name": "Simone Fumagalli",
-            "homepage": "http://www.iliveinperego.com/",
+            "name": "Nibsirahsieu",
             "email": "simone@iliveinperego.com",
             "role": "Developer"
         }
     ],
     "require": {
         "php": "^7.0.8",
-        "symfony/framework-bundle": "~4.0|~5.0"
+        "symfony/config": "^3.4|^4.0",
+        "symfony/console": "^3.4|^4.0",
+        "symfony/dependency-injection": "^3.4|^4.0",
+        "symfony/http-kernel": "^3.4|^4.0",
+        "symfony/process": "^3.4|^4.0"
     },
     "autoload": {
         "psr-4": { "Hpatoio\\DeployBundle\\": "" }
