@@ -51,68 +51,80 @@ class DeployCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
 
-        $config_root_path = $this->configRootPath;
         $output->getFormatter()->setStyle('notice', new OutputFormatterStyle('red', 'yellow'));
-        $available_env = $this->deployConfig;  
         
         $env = $input->getArgument('env');
         
-        if (!in_array($env, array_keys($available_env))) {
-            throw new \InvalidArgumentException(sprintf('\'%s\' is no a valid environment. Valid environments: %s', $env, implode(",",array_keys($available_env))));
+        if (!in_array($env, array_keys($this->deployConfig))) {
+            throw new \InvalidArgumentException(sprintf('\'%s\' is no a valid environment. Valid environments: %s', $env, implode(",", array_keys($this->deployConfig))));
         }
         
-        foreach ($available_env[$env] as $key => $value) {
-            $$key = $value;
-        }
-        
-        $ssh = 'ssh -p '.$port.'';
-        
-        if ($input->getOption('rsync-options'))
-            $rsync_options = $input->getOption('rsync-options');
+        $environment = $this->deployConfig[$env];
+        $port = $environment['port'];
+        $host = $environment['host'];
+        $dir = $environment['dir'];
+        $user = $environment['user'];
+        $timeout = $environment['timeout'];
+        $postDeployOperations = $environment['post_deploy_operations'] ?? [];
 
-        if ($input->getOption('force-vendor'))
-            $rsync_options .= " --include 'vendor' ";
+        $command = ['rsync'];
 
-        $exclude_file_found = false;
+        $dryRun = $input->getOption('go') ? '' : '--dry-run';
+        if ($dryRun) {
+            $command[] = $dryRun;
+        }
+        $command = [...$command, ...explode(' ', $environment['rsync_options'])];
+
+        if ($input->getOption('rsync-options')) {
+            $command = [...$command, ...explode(" ", $input->getOption('rsync-options'))];
+        }
+        if ($input->getOption('force-vendor')) {
+            $command[] = "--include 'vendor'";
+        }
+
+        $excludeFileNotFound = false;
         
-        if (file_exists($config_root_path.'rsync_exclude.txt')) {
-            $rsync_options .= sprintf(' --exclude-from="%srsync_exclude.txt"', $config_root_path);
-            $exclude_file_found = true;
+        if (file_exists($this->configRootPath.'rsync_exclude.txt')) {
+            $command[] = sprintf('--exclude-from=%srsync_exclude.txt', $this->configRootPath);
+            $excludeFileNotFound = true;
         }
         
-        if (file_exists($config_root_path."rsync_exclude_{$env}.txt")) {
-            $rsync_options .= sprintf(" --exclude-from=\"%srsync_exclude_{$env}.txt\"", $config_root_path);
-            $exclude_file_found = true;
+        if (file_exists($this->configRootPath."rsync_exclude_{$env}.txt")) {
+            $command[] = sprintf('--exclude-from=%srsync_exclude_%s.txt', $this->configRootPath, $env);
+            $excludeFileNotFound = true;
         }
 
-        if (!$exclude_file_found) {
-            $output->writeln(sprintf('<notice>No rsync_exclude file found, nothing excluded.</notice> If you want an rsync_exclude.txt template get it here http://bit.ly/rsehdbsf2', $config_root_path."rsync_exclude.txt"));
+        if (!$excludeFileNotFound) {
+            $output->writeln(sprintf('<notice>No rsync_exclude file found, nothing excluded.</notice> If you want an rsync_exclude.txt template get it here http://bit.ly/rsehdbsf2', $this->configRootPath."rsync_exclude.txt"));
             $output->writeln("");
         }
 
-        $dryRun = $input->getOption('go') ? '' : '--dry-run';
-        
-        $user = ($user !='') ? $user."@" : "";
+        if ($user) {
+            $user = $user.'@';
+        }
 
-        $command = "rsync $dryRun $rsync_options -e \"$ssh\" ./ $user$host:$dir";
+        $command[] = '-e';
+        $command[] = 'ssh -p '.$port.'';
+        $command[] = './';
+        $command[] = sprintf('%s%s:%s', $user, $host, $dir);
 
         $output->writeln(sprintf('%s on <info>%s</info> server with <info>%s</info> command',
             ($dryRun) ? 'Fake deploying' : 'Deploying',
-            $input->getArgument('env'),
-            $command));
+            $env,
+            implode(" ", $command)));
 
-        $process = new Process([$command]);
+        $process = new Process($command);
         $process->setTimeout(($timeout == 0) ? null : $timeout);
 
         $output->writeln("\nSTART deploy\n--------------------------------------------");
 
         $process->run(function ($type, $buffer) use ($output) {
-                        if ('err' === $type) {
-                            $output->write( 'ERR > '.$buffer);
-                        } else {
-                            $output->write($buffer);
-                        }
-                    });
+            if ('err' === $type) {
+                $output->write( 'ERR > '.$buffer);
+            } else {
+                $output->write($buffer);
+            }
+        });
 
         $output->writeln("\nEND deploy\n--------------------------------------------\n");
 
@@ -122,26 +134,30 @@ class DeployCommand extends Command
             $output->writeln(sprintf('<info>Run the command with --go for really copy the files to %s server.</info>', $env));
 
         } else {
-            
+            $postCommand = [];
             $output->writeln(sprintf("Deployed on <info>%s</info> server!\n", $env));
 
-            if ( isset($post_deploy_operations) && count($post_deploy_operations) > 0 ) {
-                
-                $post_deploy_commands = implode("; ", $post_deploy_operations);
-
+            if (count($postDeployOperations) > 0 ) {
                 $output->writeln(sprintf("Running post deploy commands on <info>%s</info> server!\n", $env));
 
-                $command = "$ssh $user$host 'cd \"$dir\";".$post_deploy_commands."'";
+                $postCommand[] = 'ssh';
+                $postCommand[] = '-p22';
+                $postCommand[] = sprintf('%s%s', $user, $host);
+                $postCommand[] = "cd";
+                $postCommand[] = $dir. ';';
+                foreach ($postDeployOperations as $postDeployOperation) {
+                    $postCommand = array_merge($postCommand, explode(" ", $postDeployOperation . ';'));
+                }
 
-                $process = new Process([$command]);
-                $process->setTimeout(($timeout == 0) ? null : $timeout);
-                $process->run(function ($type, $buffer) use ($output) {
-                        if ('err' === $type) {
-                            $output->write( 'ERR > '.$buffer);
-                        } else {
-                            $output->write($buffer);
-                        }
-                    });
+                $postProcess = new Process($postCommand);
+                $postProcess->setTimeout(($timeout == 0) ? null : $timeout);
+                $postProcess->run(function ($type, $buffer) use ($output) {
+                    if ('err' === $type) {
+                        $output->write( 'ERR > '.$buffer);
+                    } else {
+                        $output->write($buffer);
+                    }
+                });
 
                 $output->writeln("\nDone");
 
