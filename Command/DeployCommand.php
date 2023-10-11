@@ -65,7 +65,7 @@ class DeployCommand extends Command
         $dir = $environment['dir'];
         $user = $environment['user'];
         $timeout = $environment['timeout'];
-        $postDeployOperations = $environment['post_deploy_operations'] ?? [];
+        $postDeployOperations = isset($environment['post_deploy_operations']) ? $environment['post_deploy_operations'] : [];
 
         $command = ['rsync'];
 
@@ -73,10 +73,10 @@ class DeployCommand extends Command
         if ($dryRun) {
             $command[] = $dryRun;
         }
-        $command = [...$command, ...explode(' ', $environment['rsync_options'])];
+        $command = array_merge($command, explode(' ', $environment['rsync_options']));
 
         if ($input->getOption('rsync-options')) {
-            $command = [...$command, ...explode(" ", $input->getOption('rsync-options'))];
+            $command = array_merge($command, explode(" ", $input->getOption('rsync-options')));
         }
         if ($input->getOption('force-vendor')) {
             $command[] = "--include 'vendor'";
@@ -141,7 +141,7 @@ class DeployCommand extends Command
                 $output->writeln(sprintf("Running post deploy commands on <info>%s</info> server!\n", $env));
 
                 $postCommand[] = 'ssh';
-                $postCommand[] = '-p22';
+                $postCommand[] = sprintf('-p %s', $port);
                 $postCommand[] = sprintf('%s%s', $user, $host);
                 $postCommand[] = "cd";
                 $postCommand[] = $dir. ';';
