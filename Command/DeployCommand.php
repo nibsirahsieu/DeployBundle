@@ -22,7 +22,7 @@ class DeployCommand extends Command
     private $configRootPath;
     private $deployConfig;
 
-    public function __construct($configRootPath, $deployConfig)
+    public function __construct(string $configRootPath, array $deployConfig)
     {
         $this->configRootPath = $configRootPath;
         $this->deployConfig = $deployConfig;
@@ -52,20 +52,20 @@ class DeployCommand extends Command
     {
 
         $output->getFormatter()->setStyle('notice', new OutputFormatterStyle('red', 'yellow'));
-        
+
         $env = $input->getArgument('env');
-        
+
         if (!in_array($env, array_keys($this->deployConfig))) {
             throw new \InvalidArgumentException(sprintf('\'%s\' is no a valid environment. Valid environments: %s', $env, implode(",", array_keys($this->deployConfig))));
         }
-        
+
         $environment = $this->deployConfig[$env];
         $port = $environment['port'];
         $host = $environment['host'];
         $dir = $environment['dir'];
         $user = $environment['user'];
-        $timeout = $environment['timeout'];
-        $postDeployOperations = isset($environment['post_deploy_operations']) ? $environment['post_deploy_operations'] : [];
+        $timeout = (int) $environment['timeout'];
+        $postDeployOperations = isset($environment['post_deploy_operations']) ? (array) $environment['post_deploy_operations'] : [];
 
         $command = ['rsync'];
 
@@ -83,12 +83,12 @@ class DeployCommand extends Command
         }
 
         $excludeFileNotFound = false;
-        
+
         if (file_exists($this->configRootPath.'rsync_exclude.txt')) {
             $command[] = sprintf('--exclude-from=%srsync_exclude.txt', $this->configRootPath);
             $excludeFileNotFound = true;
         }
-        
+
         if (file_exists($this->configRootPath."rsync_exclude_{$env}.txt")) {
             $command[] = sprintf('--exclude-from=%srsync_exclude_%s.txt', $this->configRootPath, $env);
             $excludeFileNotFound = true;
@@ -114,7 +114,7 @@ class DeployCommand extends Command
             implode(" ", $command)));
 
         $process = new Process($command);
-        $process->setTimeout(($timeout == 0) ? null : $timeout);
+        $process->setTimeout(($timeout == 0) ? null : (float) $timeout);
 
         $output->writeln("\nSTART deploy\n--------------------------------------------");
 
@@ -150,7 +150,7 @@ class DeployCommand extends Command
                 }
 
                 $postProcess = new Process($postCommand);
-                $postProcess->setTimeout(($timeout == 0) ? null : $timeout);
+                $postProcess->setTimeout(($timeout == 0) ? null : (float) $timeout);
                 $postProcess->run(function ($type, $buffer) use ($output) {
                     if ('err' === $type) {
                         $output->write( 'ERR > '.$buffer);
@@ -161,7 +161,7 @@ class DeployCommand extends Command
 
                 $output->writeln("\nDone");
 
-            } 
+            }
 
         }
 
