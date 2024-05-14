@@ -33,7 +33,7 @@ class DeployCommand extends Command
     /**
      * @see Command
      */
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setName('project:deploy')
