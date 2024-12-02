@@ -35,7 +35,7 @@ class Configuration implements ConfigurationInterface
         $rootNode->isRequired()
                 ->requiresAtLeastOneElement()
                 ->useAttributeAsKey('name')
-                ->prototype('array')
+                ->arrayPrototype()
                     ->children()
                         ->scalarNode('rsync_options')
 			->defaultValue('-azC --force --delete --progress -h --checksum')
