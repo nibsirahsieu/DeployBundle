@@ -65,6 +65,7 @@ class DeployCommand extends Command
         $dir = $environment['dir'];
         $user = $environment['user'];
         $timeout = (int) $environment['timeout'];
+        $certFile = $environment['cert_file'];
         $postDeployOperations = isset($environment['post_deploy_operations']) ? (array) $environment['post_deploy_operations'] : [];
 
         $command = ['rsync'];
@@ -104,7 +105,7 @@ class DeployCommand extends Command
         }
 
         $command[] = '-e';
-        $command[] = 'ssh -p '.$port.'';
+        $command[] = $certFile ? 'ssh -i "' . $certFile . '" -p '.$port.'' : 'ssh -p '.$port.'';
         $command[] = './';
         $command[] = sprintf('%s%s:%s', $user, $host, $dir);
 

@@ -63,6 +63,10 @@ class Configuration implements ConfigurationInterface
                                 ->defaultValue('60')
                                 ->info('Process timeout in seconds. Set it to 0 for no timeout.')
                                 ->end()
+                        ->scalarNode('cert_file')
+                                ->defaultValue('')
+                                ->info('This option is optional, just in case you want to log in to the server using certificate file')
+                                ->end()
                         ->variableNode('post_deploy_operations')
                                 ->info('Shell commands to run after deploy on the remote machine.')
                                 ->end();
