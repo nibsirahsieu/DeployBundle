@@ -139,18 +139,24 @@ class DeployCommand extends Command
             $output->writeln(sprintf("Deployed on <info>%s</info> server!\n", $env));
 
             if (count($postDeployOperations) > 0 ) {
-                $output->writeln(sprintf("Running post deploy commands on <info>%s</info> server!\n", $env));
-
                 $postCommand[] = 'ssh';
+                if ($certFile) {
+                    $postCommand[] = sprintf('-i %s', $certFile);
+                }
                 $postCommand[] = sprintf('-p %s', $port);
                 $postCommand[] = sprintf('%s%s', $user, $host);
-                $postCommand[] = "cd";
+                $postCommand[] = "-t";
+                $postCommand[] = '"cd';
                 $postCommand[] = $dir. ';';
                 foreach ($postDeployOperations as $postDeployOperation) {
                     $postCommand = array_merge($postCommand, explode(" ", $postDeployOperation . ';'));
                 }
+                $postCommand[] = 'bash"';
+                $commandString = \implode(" ", $postCommand);
 
-                $postProcess = new Process($postCommand);
+                $output->writeln(sprintf("Running post deploy commands on <info>%s</info> server with <info>%s</info>!\n", $env, $commandString));
+
+                $postProcess = Process::fromShellCommandline($commandString);
                 $postProcess->setTimeout(($timeout == 0) ? null : (float) $timeout);
                 $postProcess->run(function ($type, $buffer) use ($output) {
                     if ('err' === $type) {
